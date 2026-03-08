@@ -1,0 +1,127 @@
+import type { Account, Transaction } from "./types"
+
+export const accounts: Account[] = [
+  {
+    id: "1",
+    name: "Main Checking",
+    type: "spending",
+    balance: 4250.8,
+    originalAmount: 5000,
+    totalSpend: 749.2,
+    color: "#F2826A",
+  },
+  {
+    id: "2",
+    name: "Vacation Fund",
+    type: "saving",
+    balance: 2800,
+    originalAmount: 1000,
+    totalSpend: 0,
+    goalAmount: 5000,
+    color: "#DABB8F",
+  },
+  {
+    id: "3",
+    name: "Emergency Fund",
+    type: "saving",
+    balance: 8500,
+    originalAmount: 5000,
+    totalSpend: 0,
+    goalAmount: 10000,
+    color: "#7EC9A0",
+  },
+]
+
+export const transactions: Transaction[] = [
+  {
+    id: "1",
+    accountId: "1",
+    category: "Food",
+    description: "Grocery Store",
+    amount: 85.5,
+    date: "2026-02-23",
+    type: "expense",
+  },
+  {
+    id: "2",
+    accountId: "1",
+    category: "Transport",
+    description: "Uber Ride",
+    amount: 24.0,
+    date: "2026-02-22",
+    type: "expense",
+  },
+  {
+    id: "3",
+    accountId: "1",
+    category: "Entertainment",
+    description: "Netflix Subscription",
+    amount: 15.99,
+    date: "2026-02-21",
+    type: "expense",
+  },
+  {
+    id: "4",
+    accountId: "1",
+    category: "Shopping",
+    description: "Amazon Purchase",
+    amount: 67.3,
+    date: "2026-02-20",
+    type: "expense",
+  },
+  {
+    id: "5",
+    accountId: "2",
+    category: "Income",
+    description: "Monthly Savings",
+    amount: 500,
+    date: "2026-02-20",
+    type: "income",
+  },
+  {
+    id: "6",
+    accountId: "1",
+    category: "Food",
+    description: "Coffee Shop",
+    amount: 6.5,
+    date: "2026-02-19",
+    type: "expense",
+  },
+  {
+    id: "7",
+    accountId: "3",
+    category: "Income",
+    description: "Emergency Transfer",
+    amount: 1000,
+    date: "2026-02-18",
+    type: "income",
+  },
+  {
+    id: "8",
+    accountId: "1",
+    category: "Bills",
+    description: "Electric Bill",
+    amount: 120.0,
+    date: "2026-02-17",
+    type: "expense",
+  },
+]
+
+export const categoryColors: Record<string, string> = {
+  Food: "#F2826A",
+  Transport: "#DABB8F",
+  Entertainment: "#E0B44A",
+  Shopping: "#6BB3C4",
+  Bills: "#E05252",
+  Income: "#7EC9A0",
+}
+
+export const weeklySpending = [
+  { day: "Mon", amount: 45 },
+  { day: "Tue", amount: 82 },
+  { day: "Wed", amount: 30 },
+  { day: "Thu", amount: 65 },
+  { day: "Fri", amount: 120 },
+  { day: "Sat", amount: 90 },
+  { day: "Sun", amount: 25 },
+]
