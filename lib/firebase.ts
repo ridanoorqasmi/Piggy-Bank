@@ -1,6 +1,11 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
 import { getAuth, connectAuthEmulator } from "firebase/auth"
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore"
+import {
+  initializeFirestore,
+  connectFirestoreEmulator,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,7 +26,12 @@ function getFirebase() {
     ? (getApps()[0] as FirebaseApp)
     : initializeApp(firebaseConfig)
   const auth = getAuth(app)
-  const db = getFirestore(app)
+  // Use persistent cache (IndexedDB) so data survives browser refresh
+  const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  })
   if (useEmulator) {
     try {
       connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true })

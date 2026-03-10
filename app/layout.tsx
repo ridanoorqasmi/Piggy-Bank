@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Nunito, DM_Serif_Display, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { PwaRegister } from '@/components/pwa-register'
+import { CurrencyProvider } from '@/contexts/currency-context'
 import './globals.css'
 
 const _nunito = Nunito({ subsets: ["latin"], variable: "--font-nunito" });
@@ -35,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${_nunito.variable} ${_dmSerif.variable} font-sans antialiased`}>
-        {children}
+        <CurrencyProvider>{children}</CurrencyProvider>
         <PwaRegister />
         <Analytics />
       </body>

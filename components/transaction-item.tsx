@@ -2,12 +2,14 @@
 
 import type { Transaction } from "@/lib/types"
 import { categoryColors } from "@/lib/data"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface TransactionItemProps {
   transaction: Transaction
 }
 
 export function TransactionItem({ transaction }: TransactionItemProps) {
+  const { formatWithSymbol } = useCurrency()
   const color = categoryColors[transaction.category] ?? "#B8A08A"
   const isExpense = transaction.type === "expense"
 
@@ -38,7 +40,8 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
             isExpense ? "text-foreground" : "text-piggy-success"
           }`}
         >
-          {isExpense ? "-" : "+"}${transaction.amount.toFixed(2)}
+          {isExpense ? "-" : "+"}
+          {formatWithSymbol(transaction.amount)}
         </p>
         <p className="text-[10px] text-muted-foreground">
           {new Date(transaction.date).toLocaleDateString("en-US", {

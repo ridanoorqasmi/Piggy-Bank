@@ -116,7 +116,7 @@ export default function Home() {
       )}
 
       {screen === "profile" && (
-        <ProfileScreen user={user} onLogout={signOut} />
+        <ProfileScreen user={user} accounts={accounts} onLogout={signOut} />
       )}
 
       {showBottomNav && (

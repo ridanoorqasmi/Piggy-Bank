@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ArrowLeft, Plus, MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import type { Account, Transaction } from "@/lib/types"
+import { useCurrency } from "@/contexts/currency-context"
 import { categoryColors } from "@/lib/data"
 import { TransactionItem } from "@/components/transaction-item"
 import { AddTransactionModal, type AddTransactionData } from "@/components/add-transaction-modal"
@@ -42,6 +43,7 @@ export function AccountDetailScreen({
   onEdit,
   onDelete,
 }: AccountDetailScreenProps) {
+  const { formatWithSymbol } = useCurrency()
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -112,19 +114,19 @@ export function AccountDetailScreen({
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Original</p>
               <p className="mt-0.5 truncate font-serif text-base text-foreground sm:text-lg">
-                ${account.originalAmount.toLocaleString()}
+                {formatWithSymbol(account.originalAmount)}
               </p>
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">In Bank</p>
               <p className="mt-0.5 truncate font-serif text-base text-piggy-success sm:text-lg">
-                ${account.balance.toLocaleString()}
+                {formatWithSymbol(account.balance)}
               </p>
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Spent</p>
               <p className="mt-0.5 truncate font-serif text-base text-primary sm:text-lg">
-                ${account.totalSpend.toLocaleString()}
+                {formatWithSymbol(account.totalSpend)}
               </p>
             </div>
           </div>
@@ -159,7 +161,7 @@ export function AccountDetailScreen({
                       color: "#F5E6D3",
                       fontSize: "12px",
                     }}
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, ""]}
+                    formatter={(value: number) => [formatWithSymbol(value), ""]}
                   />
                 </PieChart>
               </ResponsiveContainer>

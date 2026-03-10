@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import type { Account } from "@/lib/types"
 import { createAccountSchema } from "@/lib/validations"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface EditAccountScreenProps {
   account: Account
@@ -28,6 +29,7 @@ export function EditAccountScreen({
   onBack,
   onUpdateAccount,
 }: EditAccountScreenProps) {
+  const { formatWithSymbol } = useCurrency()
   const [accountType, setAccountType] = useState<"spending" | "saving">(
     account.type
   )
@@ -168,7 +170,7 @@ export function EditAccountScreen({
           />
           <p className="text-[10px] text-muted-foreground">
             Current balance will be recalculated as original amount minus total
-            spent (${account.totalSpend.toLocaleString()}).
+            spent ({formatWithSymbol(account.totalSpend)}).
           </p>
         </div>
 

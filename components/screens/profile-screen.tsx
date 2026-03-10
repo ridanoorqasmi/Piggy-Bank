@@ -1,20 +1,29 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import { ArrowLeft, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { StreakBadge } from "@/components/streak-badge"
+import { CurrencySheet } from "@/components/currency-sheet"
+import { useCurrency } from "@/contexts/currency-context"
 import type { User } from "firebase/auth"
+import type { Account } from "@/lib/types"
 
 interface ProfileScreenProps {
   user?: User | null
+  accounts: Account[]
   onLogout: () => void
 }
 
-export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
+export function ProfileScreen({ user, accounts, onLogout }: ProfileScreenProps) {
+  const [currencySheetOpen, setCurrencySheetOpen] = useState(false)
+  const { symbol, label } = useCurrency()
   const displayName = user?.displayName?.trim() || user?.email?.split("@")[0] || "User"
   const email = user?.email ?? ""
   const initial = displayName.charAt(0).toUpperCase()
+  const accountCount = accounts.length
+  const goalsCount = accounts.filter((a) => a.type === "saving").length
+
   return (
     <div className="min-h-dvh bg-background pb-24">
       <header className="sticky top-0 z-30 bg-background/95 px-6 pb-4 pt-[env(safe-area-inset-top)] backdrop-blur-md">
@@ -44,15 +53,13 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
             <h2 className="font-serif text-xl text-foreground">{displayName}</h2>
             <p className="text-xs text-muted-foreground">{email || "—"}</p>
           </div>
-          <StreakBadge streak={7} />
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
-            { value: "3", label: "Accounts", className: "text-foreground" },
-            { value: "2", label: "Goals", className: "text-piggy-success" },
-            { value: "7", label: "Day Streak", className: "text-piggy-warning" },
+            { value: String(accountCount), label: "Accounts", className: "text-foreground" },
+            { value: String(goalsCount), label: "Goals", className: "text-piggy-success" },
           ].map((stat, i) => (
             <div key={stat.label} className={`retro-card retro-noise animate-retro-in stagger-${i + 2} rounded-2xl bg-card p-4 text-center`}>
               <p className={`font-serif text-2xl ${stat.className}`}>{stat.value}</p>
@@ -63,23 +70,38 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
 
         {/* Settings items */}
         <div className="retro-card retro-noise animate-retro-in stagger-5 rounded-2xl bg-card">
-          {[
-            "Notifications",
-            "Currency",
-            "Categories",
-            "Export Data",
-          ].map((item, i, arr) => (
+          <button
+            className="flex w-full items-center justify-between border-b border-dashed border-border/60 px-6 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted/50"
+            onClick={() => setCurrencySheetOpen(true)}
+          >
+            Currency
+            <span className="flex items-center gap-2">
+              <span className="text-muted-foreground">{symbol} ({label})</span>
+              <ArrowLeft className="size-4 rotate-180 text-muted-foreground" />
+            </span>
+          </button>
+          {["Notifications", "Categories", "Export Data"].map((item, i, arr) => (
             <button
               key={item}
               className={`flex w-full items-center justify-between px-6 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted/50 ${
                 i < arr.length - 1 ? "border-b border-dashed border-border/60" : ""
               }`}
             >
-              {item}
-              <ArrowLeft className="size-4 rotate-180 text-muted-foreground" />
+              <span className="flex flex-col items-start gap-0.5">
+                <span>{item}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Coming soon
+                </span>
+              </span>
+              <ArrowLeft className="size-4 rotate-180 text-muted-foreground opacity-70" />
             </button>
           ))}
         </div>
+
+        <CurrencySheet
+          open={currencySheetOpen}
+          onOpenChange={setCurrencySheetOpen}
+        />
 
         <Button
           variant="outline"

@@ -154,3 +154,8 @@
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.2s; }
 .stagger-5 { animation-delay: 0.25s; }
+
+/* Piggy-warning color reference for shadow utilities */
+:root {
+  --color-piggy-warning: #E0B44A;
+}
