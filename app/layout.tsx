@@ -12,7 +12,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Piggy Bank - Personal Finance',
   description: 'A cute, premium personal finance app to manage your spending and savings.',
-  manifest: '/manifest.webmanifest',
+  manifest: '/manifest.json',
+  themeColor: '#0f172a',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#13151C',
+  themeColor: '#0f172a',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
