@@ -12,7 +12,10 @@ import { useCurrency } from "@/contexts/currency-context"
 interface EditAccountScreenProps {
   account: Account
   onBack: () => void
-  onUpdateAccount: (accountId: string, data: Partial<Account>) => Promise<void>
+  onUpdateAccount: (
+    accountId: string,
+    data: Partial<Omit<Account, "id">> & { goalAmount?: number | null }
+  ) => Promise<void>
 }
 
 const colorOptions = [

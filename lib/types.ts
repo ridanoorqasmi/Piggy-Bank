@@ -5,7 +5,7 @@ export interface Account {
   balance: number
   originalAmount: number
   totalSpend: number
-  goalAmount?: number
+  goalAmount?: number | null
   color: string
 }
 

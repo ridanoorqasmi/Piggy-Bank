@@ -18,7 +18,7 @@ interface InsightsScreenProps {
 }
 
 // Custom active shape — lifts the segment outward with a subtle glow
-const renderActiveShape = (props: Record<string, unknown>) => {
+const renderActiveShape = (props: any) => {
   const {
     cx, cy, innerRadius, outerRadius,
     startAngle, endAngle, fill, cornerRadius,

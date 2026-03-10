@@ -75,7 +75,7 @@ export function useAccounts(uid: string | undefined) {
   ): Promise<void> {
     if (!uid || !db) throw new Error("Firebase is not configured")
     const accountRef = doc(db, "users", uid, "accounts", accountId)
-    const payload: Record<string, unknown> = {}
+    const payload: Record<string, any> = {}
     if (data.name !== undefined) payload.name = data.name
     if (data.type !== undefined) payload.type = data.type
     if (data.balance !== undefined) payload.balance = data.balance
