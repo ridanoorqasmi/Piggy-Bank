@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { ArrowLeft, Plus, MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import type { Account, Transaction } from "@/lib/types"
@@ -65,6 +65,20 @@ export function AccountDetailScreen({
   const accountTransactions = transactions.filter(
     (t) => t.accountId === account.id
   )
+
+  /** In Bank = Original + sum(income) − sum(expenses); Spent = sum(expenses). Amounts are positive per type. */
+  const summary = useMemo(() => {
+    let spent = 0
+    let income = 0
+    for (const t of accountTransactions) {
+      if (t.type === "expense") spent += t.amount
+      else income += t.amount
+    }
+    return {
+      spent,
+      inBank: account.originalAmount + income - spent,
+    }
+  }, [accountTransactions, account.originalAmount])
 
   const categoryData = accountTransactions
     .filter((t) => t.type === "expense")
@@ -134,13 +148,13 @@ export function AccountDetailScreen({
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">In Bank</p>
               <p className="mt-0.5 truncate font-serif text-base text-piggy-success sm:text-lg">
-                <span data-testid="account-balance">{formatWithSymbol(account.balance)}</span>
+                <span data-testid="account-balance">{formatWithSymbol(summary.inBank)}</span>
               </p>
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Spent</p>
               <p className="mt-0.5 truncate font-serif text-base text-primary sm:text-lg">
-                {formatWithSymbol(account.totalSpend)}
+                {formatWithSymbol(summary.spent)}
               </p>
             </div>
           </div>
