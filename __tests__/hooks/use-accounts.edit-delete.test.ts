@@ -111,15 +111,13 @@ describe("useAccounts (edit and delete)", () => {
       expect(mockDeleteDoc).toHaveBeenCalledWith(mockDocRef)
     })
 
-    it("throws when uid is undefined", async () => {
+    it("does not call deleteDoc when uid is undefined (deleteAccount is a no-op)", async () => {
       const { result } = renderHook(() => useAccounts(undefined))
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
       })
 
-      await expect(result.current.deleteAccount("acc-1")).rejects.toThrow(
-        "Firebase is not configured"
-      )
+      result.current.deleteAccount("acc-1")
       expect(mockDeleteDoc).not.toHaveBeenCalled()
     })
   })

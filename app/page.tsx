@@ -18,8 +18,13 @@ export default function Home() {
   const { user, loading, error, setError, signIn, signUp, signOut } = useAuth()
   const { accounts, loading: accountsLoading, createAccount, updateAccount, deleteAccount } =
     useAccounts(user?.uid)
-  const { transactions, addTransaction, deleteTransactionsByAccountId } =
-    useTransactions(user?.uid)
+  const {
+    transactions,
+    addTransaction,
+    deleteTransactionsByAccountId,
+    updateTransaction,
+    deleteTransaction,
+  } = useTransactions(user?.uid)
   const [screen, setScreen] = useState<Screen>("dashboard")
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
 
@@ -101,6 +106,8 @@ export default function Home() {
           transactions={transactions}
           onBack={() => setScreen("dashboard")}
           onAddTransaction={addTransaction}
+          onUpdateTransaction={updateTransaction}
+          onDeleteTransaction={deleteTransaction}
           onEdit={() => setScreen("edit-account")}
           onDelete={async () => {
             deleteTransactionsByAccountId(selectedAccount.id) // fire-and-forget

@@ -5,6 +5,15 @@ import { ArrowLeft } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { Account } from "@/lib/types"
 import { createAccountSchema } from "@/lib/validations"
 
@@ -29,12 +38,53 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
   const [startingAmount, setStartingAmount] = useState("")
   const [goalAmount, setGoalAmount] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [amountError, setAmountError] = useState<string | null>(null)
+  const [goalError, setGoalError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [negativeAmountDialogOpen, setNegativeAmountDialogOpen] = useState(false)
+
+  function applyZodFieldErrors(
+    issues: { path: (string | number)[]; message: string }[]
+  ) {
+    let nextName: string | null = null
+    let nextAmount: string | null = null
+    let nextGoal: string | null = null
+    for (const issue of issues) {
+      const key = issue.path[0]
+      if (key === "name") nextName = issue.message
+      else if (key === "balance" || key === "originalAmount")
+        nextAmount = "Starting amount cannot be negative."
+      else if (key === "goalAmount") nextGoal = issue.message
+    }
+    setNameError(nextName)
+    setAmountError(nextAmount)
+    setGoalError(nextGoal)
+    if (!nextName && !nextAmount && !nextGoal && issues[0]) {
+      setSaveError(issues[0].message)
+    }
+  }
 
   async function handleSave() {
-    setError(null)
-    const amount = parseFloat(startingAmount) || 0
-    const goal = accountType === "saving" && goalAmount ? parseFloat(goalAmount) : undefined
+    setNameError(null)
+    setAmountError(null)
+    setGoalError(null)
+    setSaveError(null)
+
+    const rawAmount = startingAmount.trim()
+    const parsedAmount = rawAmount === "" ? 0 : Number.parseFloat(rawAmount)
+    const amount = Number.isFinite(parsedAmount) ? parsedAmount : 0
+
+    if (Number.isFinite(parsedAmount) && parsedAmount < 0) {
+      setAmountError("Starting amount cannot be negative.")
+      setNegativeAmountDialogOpen(true)
+      return
+    }
+
+    const goal =
+      accountType === "saving" && goalAmount.trim() !== ""
+        ? Number.parseFloat(goalAmount)
+        : undefined
     const result = createAccountSchema.safeParse({
       name: name.trim(),
       type: accountType,
@@ -45,8 +95,7 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
       color: selectedColor,
     })
     if (!result.success) {
-      const first = result.error.flatten().formErrors[0] ?? result.error.message
-      setError(first)
+      applyZodFieldErrors(result.error.issues)
       return
     }
     setSubmitting(true)
@@ -62,7 +111,7 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
       })
       onBack()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create account")
+      setSaveError(e instanceof Error ? e.message : "Failed to create account")
     } finally {
       setSubmitting(false)
     }
@@ -86,19 +135,30 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
       </header>
 
       <div className="flex flex-col gap-6 px-6">
-        {error && (
-          <p className="rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive">{error}</p>
-        )}
         <div className="animate-retro-in stagger-1 flex flex-col gap-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label
+            htmlFor="create-account-name"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          >
             Account Name
           </Label>
           <Input
+            id="create-account-name"
             placeholder="e.g. Travel Fund"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value)
+              setNameError(null)
+            }}
             className="h-12 rounded-xl border-border bg-card text-foreground placeholder:text-muted-foreground"
+            aria-invalid={nameError ? true : undefined}
+            aria-describedby={nameError ? "create-account-name-error" : undefined}
           />
+          {nameError && (
+            <p id="create-account-name-error" className="text-xs text-destructive">
+              {nameError}
+            </p>
+          )}
         </div>
 
         <div className="animate-retro-in stagger-2 flex flex-col gap-3">
@@ -130,30 +190,69 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
         </div>
 
         <div className="animate-retro-in stagger-3 flex flex-col gap-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Label
+            htmlFor="create-account-starting-amount"
+            className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          >
             Starting Amount
           </Label>
           <Input
+            id="create-account-starting-amount"
             type="number"
             placeholder="0.00"
             value={startingAmount}
-            onChange={(e) => setStartingAmount(e.target.value)}
+            onChange={(e) => {
+              setStartingAmount(e.target.value)
+              setAmountError(null)
+            }}
             className="h-12 rounded-xl border-border bg-card font-serif text-xl text-foreground placeholder:text-muted-foreground"
+            min={0}
+            aria-invalid={amountError ? true : undefined}
+            aria-describedby={
+              amountError
+                ? "create-account-starting-amount-error create-account-starting-amount-hint"
+                : "create-account-starting-amount-hint"
+            }
           />
+          {amountError && (
+            <p id="create-account-starting-amount-error" className="text-xs text-destructive">
+              {amountError}
+            </p>
+          )}
+          <p
+            id="create-account-starting-amount-hint"
+            className="text-xs text-muted-foreground"
+          >
+            You can add expenses after creating the account.
+          </p>
         </div>
 
         {accountType === "saving" && (
           <div className="animate-retro-in flex flex-col gap-2">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Label
+              htmlFor="create-account-goal"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            >
               Goal Amount (optional)
             </Label>
             <Input
+              id="create-account-goal"
               type="number"
               placeholder="0.00"
               value={goalAmount}
-              onChange={(e) => setGoalAmount(e.target.value)}
+              onChange={(e) => {
+                setGoalAmount(e.target.value)
+                setGoalError(null)
+              }}
               className="h-12 rounded-xl border-border bg-card font-serif text-xl text-foreground placeholder:text-muted-foreground"
+              aria-invalid={goalError ? true : undefined}
+              aria-describedby={goalError ? "create-account-goal-error" : undefined}
             />
+            {goalError && (
+              <p id="create-account-goal-error" className="text-xs text-destructive">
+                {goalError}
+              </p>
+            )}
           </div>
         )}
 
@@ -181,6 +280,9 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
           </div>
         </div>
 
+        {saveError && (
+          <p className="animate-retro-in stagger-5 text-xs text-destructive">{saveError}</p>
+        )}
         <Button
           onClick={handleSave}
           disabled={submitting}
@@ -189,6 +291,25 @@ export function CreateAccountScreen({ onBack, onCreateAccount }: CreateAccountSc
           {submitting ? "Saving…" : "Save Account"}
         </Button>
       </div>
+
+      <AlertDialog open={negativeAmountDialogOpen} onOpenChange={setNegativeAmountDialogOpen}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] rounded-xl border-border bg-card sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-base text-foreground sm:text-lg">
+              Starting amount can&apos;t be negative
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              Use zero or a positive number for this field. After the account exists, you can add
+              expenses as transactions to reduce the balance.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="w-full flex-col gap-2 sm:flex-col sm:space-x-0">
+            <AlertDialogAction className="h-12 w-full rounded-xl bg-primary text-sm font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary/90">
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

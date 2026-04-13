@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { ArrowLeft, Plus, MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import type { Account, Transaction } from "@/lib/types"
@@ -8,6 +8,8 @@ import { useCurrency } from "@/contexts/currency-context"
 import { categoryColors } from "@/lib/data"
 import { TransactionItem } from "@/components/transaction-item"
 import { AddTransactionModal, type AddTransactionData } from "@/components/add-transaction-modal"
+import { EditTransactionModal } from "@/components/edit-transaction-modal"
+import { toast } from "@/hooks/use-toast"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +33,12 @@ interface AccountDetailScreenProps {
   transactions: Transaction[]
   onBack: () => void
   onAddTransaction: (accountId: string, data: AddTransactionData) => Promise<void>
+  onUpdateTransaction: (
+    transactionId: string,
+    previous: Pick<Transaction, "accountId" | "amount" | "type">,
+    data: AddTransactionData
+  ) => Promise<void>
+  onDeleteTransaction: (transaction: Transaction) => Promise<void>
   onEdit: () => void
   onDelete: () => Promise<void>
 }
@@ -40,6 +48,8 @@ export function AccountDetailScreen({
   transactions,
   onBack,
   onAddTransaction,
+  onUpdateTransaction,
+  onDeleteTransaction,
   onEdit,
   onDelete,
 }: AccountDetailScreenProps) {
@@ -48,6 +58,10 @@ export function AccountDetailScreen({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null)
+  const [deletingTransaction, setDeletingTransaction] = useState(false)
+  const deleteTxLockRef = useRef(false)
   const accountTransactions = transactions.filter(
     (t) => t.accountId === account.id
   )
@@ -120,7 +134,7 @@ export function AccountDetailScreen({
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">In Bank</p>
               <p className="mt-0.5 truncate font-serif text-base text-piggy-success sm:text-lg">
-                {formatWithSymbol(account.balance)}
+                <span data-testid="account-balance">{formatWithSymbol(account.balance)}</span>
               </p>
             </div>
             <div className="min-w-0">
@@ -189,10 +203,18 @@ export function AccountDetailScreen({
           <div className="divide-y divide-dashed divide-border/60">
             {accountTransactions.length > 0 ? (
               accountTransactions.map((t) => (
-                <TransactionItem key={t.id} transaction={t} />
+                <TransactionItem
+                  key={t.id}
+                  transaction={t}
+                  onEdit={(tx) => setEditingTransaction(tx)}
+                  onDelete={(tx) => setTransactionToDelete(tx)}
+                />
               ))
             ) : (
-              <p className="py-6 text-center text-sm text-muted-foreground sm:py-8">
+              <p
+                data-testid="empty-transactions-state"
+                className="py-6 text-center text-sm text-muted-foreground sm:py-8"
+              >
                 No transactions yet
               </p>
             )}
@@ -215,6 +237,68 @@ export function AccountDetailScreen({
         onOpenChange={setShowModal}
         onSave={onAddTransaction}
       />
+
+      <EditTransactionModal
+        transaction={editingTransaction}
+        open={editingTransaction !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingTransaction(null)
+        }}
+        onSave={onUpdateTransaction}
+      />
+
+      <AlertDialog
+        open={transactionToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTransactionToDelete(null)
+            setDeletingTransaction(false)
+          }
+        }}
+      >
+        <AlertDialogContent className="max-h-[85dvh] max-w-[calc(100%-2rem)] overflow-y-auto border-border bg-card sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-base sm:text-lg">
+              Are you sure you want to delete this transaction?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm">
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              data-testid="cancel-delete-button"
+              disabled={deletingTransaction}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="confirm-delete-button"
+              onClick={async (e) => {
+                e.preventDefault()
+                if (!transactionToDelete || deleteTxLockRef.current) return
+                deleteTxLockRef.current = true
+                setDeletingTransaction(true)
+                try {
+                  await onDeleteTransaction(transactionToDelete)
+                  setTransactionToDelete(null)
+                } catch {
+                  toast({
+                    variant: "destructive",
+                    title: "Something went wrong",
+                  })
+                } finally {
+                  setDeletingTransaction(false)
+                  deleteTxLockRef.current = false
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingTransaction ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={showDeleteConfirm}

@@ -17,6 +17,15 @@ import { db } from "@/lib/firebase"
 import type { Transaction } from "@/lib/types"
 import { mapFirestoreTransactionDoc, normalizeCategory } from "@/lib/firebase-mappers"
 
+/** Same fields as AddTransactionData — kept here to avoid importing UI from hooks */
+export type TransactionUpsertPayload = {
+  amount: number
+  type: "expense" | "income"
+  category: string
+  description: string
+  date: string
+}
+
 export function useTransactions(uid: string | undefined) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,5 +105,61 @@ export function useTransactions(uid: string | undefined) {
     await batch.commit()
   }
 
-  return { transactions, loading, error, addTransaction, deleteTransactionsByAccountId }
+  async function updateTransaction(
+    transactionId: string,
+    previous: Pick<Transaction, "accountId" | "amount" | "type">,
+    data: TransactionUpsertPayload
+  ): Promise<void> {
+    if (!uid || !db) throw new Error("Firebase is not configured")
+    const balanceDelta =
+      (previous.type === "expense" ? previous.amount : -previous.amount) +
+      (data.type === "expense" ? -data.amount : data.amount)
+    const totalSpendDelta =
+      (previous.type === "expense" ? -previous.amount : 0) +
+      (data.type === "expense" ? data.amount : 0)
+
+    const batch = writeBatch(db)
+    const txRef = doc(db, "users", uid, "transactions", transactionId)
+    const accountRef = doc(db, "users", uid, "accounts", previous.accountId)
+    const category = normalizeCategory(data.category)
+    batch.update(accountRef, {
+      balance: increment(balanceDelta),
+      totalSpend: increment(totalSpendDelta),
+    })
+    batch.update(txRef, {
+      amount: data.amount,
+      type: data.type,
+      category,
+      description: data.description || "—",
+      date: data.date,
+    })
+    await batch.commit()
+  }
+
+  async function deleteTransaction(transaction: Transaction): Promise<void> {
+    if (!uid || !db) throw new Error("Firebase is not configured")
+    const batch = writeBatch(db)
+    const txRef = doc(db, "users", uid, "transactions", transaction.id)
+    const accountRef = doc(db, "users", uid, "accounts", transaction.accountId)
+    if (transaction.type === "expense") {
+      batch.update(accountRef, {
+        balance: increment(transaction.amount),
+        totalSpend: increment(-transaction.amount),
+      })
+    } else {
+      batch.update(accountRef, { balance: increment(-transaction.amount) })
+    }
+    batch.delete(txRef)
+    await batch.commit()
+  }
+
+  return {
+    transactions,
+    loading,
+    error,
+    addTransaction,
+    deleteTransactionsByAccountId,
+    updateTransaction,
+    deleteTransaction,
+  }
 }
