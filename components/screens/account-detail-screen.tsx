@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import type { Account, Transaction } from "@/lib/types"
 import { useCurrency } from "@/contexts/currency-context"
 import { categoryColors } from "@/lib/data"
+import { calculateAccountFinancials } from "@/lib/account-financials"
 import { TransactionItem } from "@/components/transaction-item"
 import { AddTransactionModal, type AddTransactionData } from "@/components/add-transaction-modal"
 import { EditTransactionModal } from "@/components/edit-transaction-modal"
@@ -62,23 +63,16 @@ export function AccountDetailScreen({
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null)
   const [deletingTransaction, setDeletingTransaction] = useState(false)
   const deleteTxLockRef = useRef(false)
-  const accountTransactions = transactions.filter(
-    (t) => t.accountId === account.id
+  const accountTransactions = useMemo(
+    () => transactions.filter((t) => t.accountId === account.id),
+    [transactions, account.id]
   )
 
-  /** In Bank = Original + sum(income) − sum(expenses); Spent = sum(expenses). Amounts are positive per type. */
-  const summary = useMemo(() => {
-    let spent = 0
-    let income = 0
-    for (const t of accountTransactions) {
-      if (t.type === "expense") spent += t.amount
-      else income += t.amount
-    }
-    return {
-      spent,
-      inBank: account.originalAmount + income - spent,
-    }
-  }, [accountTransactions, account.originalAmount])
+  /** Shared financial derivation — same helper powers the dashboard card. */
+  const financials = useMemo(
+    () => calculateAccountFinancials(account, transactions),
+    [account, transactions]
+  )
 
   const categoryData = accountTransactions
     .filter((t) => t.type === "expense")
@@ -148,13 +142,13 @@ export function AccountDetailScreen({
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">In Bank</p>
               <p className="mt-0.5 truncate font-serif text-base text-piggy-success sm:text-lg">
-                <span data-testid="account-balance">{formatWithSymbol(summary.inBank)}</span>
+                <span data-testid="account-balance">{formatWithSymbol(financials.currentBalance)}</span>
               </p>
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Spent</p>
               <p className="mt-0.5 truncate font-serif text-base text-primary sm:text-lg">
-                {formatWithSymbol(summary.spent)}
+                {formatWithSymbol(financials.totalExpense)}
               </p>
             </div>
           </div>

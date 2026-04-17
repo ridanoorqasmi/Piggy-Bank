@@ -65,6 +65,7 @@ export default function Home() {
       {screen === "dashboard" && (
         <DashboardScreen
           accounts={accounts}
+          transactions={transactions}
           accountsLoading={accountsLoading}
           user={user}
           onNavigate={handleNavigate}

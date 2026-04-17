@@ -6,13 +6,16 @@ import { useCurrency } from "@/contexts/currency-context"
 
 interface AccountCardProps {
   account: Account
+  /** Derived current balance from calculateAccountFinancials. Falls back to account.balance. */
+  currentBalance?: number
   onClick: (account: Account) => void
 }
 
-export function AccountCard({ account, onClick }: AccountCardProps) {
+export function AccountCard({ account, currentBalance, onClick }: AccountCardProps) {
   const { formatWithSymbol } = useCurrency()
+  const displayBalance = currentBalance ?? account.balance
   const goalProgress = account.goalAmount
-    ? Math.min(Math.round((account.balance / account.goalAmount) * 100), 100)
+    ? Math.min(Math.round((displayBalance / account.goalAmount) * 100), 100)
     : null
 
   return (
@@ -52,7 +55,7 @@ export function AccountCard({ account, onClick }: AccountCardProps) {
       </div>
 
       <p className="relative mt-3 font-serif text-3xl tracking-tight text-foreground">
-        {formatWithSymbol(account.balance)}
+        {formatWithSymbol(displayBalance)}
       </p>
 
       {goalProgress !== null && (

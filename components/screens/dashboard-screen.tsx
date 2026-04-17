@@ -1,14 +1,17 @@
 "use client"
 
+import { useMemo } from "react"
 import Image from "next/image"
 import { Plus } from "lucide-react"
-import type { Account, Screen } from "@/lib/types"
+import type { Account, Screen, Transaction } from "@/lib/types"
 import type { User } from "firebase/auth"
 import { BalanceCard } from "@/components/balance-card"
 import { AccountCard } from "@/components/account-card"
+import { calculateAccountFinancials } from "@/lib/account-financials"
 
 interface DashboardScreenProps {
   accounts: Account[]
+  transactions: Transaction[]
   accountsLoading?: boolean
   user?: User | null
   onNavigate: (screen: Screen) => void
@@ -17,13 +20,27 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({
   accounts,
+  transactions,
   accountsLoading = false,
   user,
   onNavigate,
   onSelectAccount,
 }: DashboardScreenProps) {
   const displayName = user?.displayName?.trim() || user?.email?.split("@")[0] || "there"
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0)
+  const accountBalances = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const account of accounts) {
+      map.set(
+        account.id,
+        calculateAccountFinancials(account, transactions).currentBalance
+      )
+    }
+    return map
+  }, [accounts, transactions])
+  const totalBalance = useMemo(
+    () => Array.from(accountBalances.values()).reduce((sum, b) => sum + b, 0),
+    [accountBalances]
+  )
 
   return (
     <div className="min-h-dvh bg-background pb-24">
@@ -77,6 +94,7 @@ export function DashboardScreen({
               <div key={account.id} className={`animate-retro-in stagger-${i + 2}`}>
                 <AccountCard
                   account={account}
+                  currentBalance={accountBalances.get(account.id)}
                   onClick={onSelectAccount}
                 />
               </div>

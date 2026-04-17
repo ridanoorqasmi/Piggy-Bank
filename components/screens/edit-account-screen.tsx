@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import type { Account } from "@/lib/types"
 import { createAccountSchema } from "@/lib/validations"
-import { useCurrency } from "@/contexts/currency-context"
 
 interface EditAccountScreenProps {
   account: Account
@@ -32,7 +31,6 @@ export function EditAccountScreen({
   onBack,
   onUpdateAccount,
 }: EditAccountScreenProps) {
-  const { formatWithSymbol } = useCurrency()
   const [accountType, setAccountType] = useState<"spending" | "saving">(
     account.type
   )
@@ -65,7 +63,7 @@ export function EditAccountScreen({
     const result = createAccountSchema.safeParse({
       name: name.trim(),
       type: accountType,
-      balance: amount - account.totalSpend,
+      balance: amount,
       originalAmount: amount,
       totalSpend: account.totalSpend,
       goalAmount: accountType === "saving" ? goal : undefined,
@@ -77,12 +75,14 @@ export function EditAccountScreen({
       return
     }
     setSubmitting(true)
+    // Only persist fields the user actually edited. Current balance is derived
+    // from (originalAmount + income − expenses) by calculateAccountFinancials,
+    // so we intentionally do NOT overwrite the cached balance / totalSpend here
+    // (doing so previously dropped income from the dashboard total).
     const updateData = {
       name: result.data.name,
       type: result.data.type,
-      balance: result.data.originalAmount - account.totalSpend,
       originalAmount: result.data.originalAmount,
-      totalSpend: account.totalSpend,
       goalAmount:
         accountType === "saving" ? result.data.goalAmount ?? null : null,
       color: result.data.color,
@@ -172,8 +172,8 @@ export function EditAccountScreen({
             className="h-12 rounded-xl border-border bg-card font-serif text-xl text-foreground placeholder:text-muted-foreground"
           />
           <p className="text-[10px] text-muted-foreground">
-            Current balance will be recalculated as original amount minus total
-            spent ({formatWithSymbol(account.totalSpend)}).
+            Changing this updates the starting amount. Current balance is
+            always your original amount plus income minus expenses.
           </p>
         </div>
 
