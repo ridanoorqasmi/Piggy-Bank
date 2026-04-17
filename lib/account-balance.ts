@@ -19,11 +19,12 @@ export async function updateAccountBalance(
   const data = accountSnap.data()
   let balance = Number(data.balance) ?? 0
   let totalSpend = Number(data.totalSpend) ?? 0
+  const amt = Math.abs(transaction.amount)
   if (transaction.type === "expense") {
-    balance -= transaction.amount
-    totalSpend += transaction.amount
+    balance -= amt
+    totalSpend += amt
   } else {
-    balance += transaction.amount
+    balance += amt
   }
   await updateDoc(accountRef, { balance, totalSpend })
 }

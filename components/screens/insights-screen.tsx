@@ -11,7 +11,10 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import type { Transaction } from "@/lib/types"
-import { categoryColors } from "@/lib/data"
+import {
+  getCategoryColor,
+  resolveCanonicalCategoryName,
+} from "@/constants/categories"
 
 interface InsightsScreenProps {
   transactions: Transaction[]
@@ -61,7 +64,8 @@ export function InsightsScreen({ transactions }: InsightsScreenProps) {
 
   const categoryData = expenseTransactions.reduce<Record<string, number>>(
     (acc, t) => {
-      acc[t.category] = (acc[t.category] ?? 0) + t.amount
+      const label = resolveCanonicalCategoryName(t.category, "expense")
+      acc[label] = (acc[label] ?? 0) + Math.abs(t.amount)
       return acc
     },
     {}
@@ -70,10 +74,10 @@ export function InsightsScreen({ transactions }: InsightsScreenProps) {
   const pieData = Object.entries(categoryData).map(([name, value]) => ({
     name,
     value,
-    color: categoryColors[name] ?? "#8E92A4",
+    color: getCategoryColor(name, "expense"),
   }))
 
-  const totalSpent = expenseTransactions.reduce((s, t) => s + t.amount, 0)
+  const totalSpent = expenseTransactions.reduce((s, t) => s + Math.abs(t.amount), 0)
 
   const activeEntry = activeIndex !== null ? pieData[activeIndex] : null
 
@@ -175,7 +179,10 @@ export function InsightsScreen({ transactions }: InsightsScreenProps) {
                   className="size-2.5 rounded-full shadow-[0_0_6px_1px_currentColor]"
                   style={{ backgroundColor: entry.color, color: entry.color }}
                 />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span
+                  className="max-w-[min(140px,100%)] truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+                  title={entry.name}
+                >
                   {entry.name}
                 </span>
               </button>

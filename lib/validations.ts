@@ -22,7 +22,7 @@ export const createAccountSchema = z.object({
 export const addTransactionSchema = z.object({
   amount: z.number().positive("Amount must be greater than 0"),
   type: z.enum(["expense", "income"]),
-  category: z.string().min(1, "Category is required"),
+  category: z.string().min(1, "Please select a category"),
   description: z.string().max(500),
   date: z.string().min(1, "Date is required"),
 })
@@ -30,7 +30,7 @@ export const addTransactionSchema = z.object({
 export const editTransactionSchema = z.object({
   amount: z.number().positive("Amount must be greater than 0"),
   type: z.enum(["expense", "income"]),
-  category: z.string().min(1, "Category is required"),
+  category: z.string().min(1, "Please select a category"),
   description: z.string().min(1, "Title is required").max(500),
   date: z.string().min(1, "Date is required"),
 })

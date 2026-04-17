@@ -5,7 +5,10 @@ import { ArrowLeft, Plus, MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import type { Account, Transaction } from "@/lib/types"
 import { useCurrency } from "@/contexts/currency-context"
-import { categoryColors } from "@/lib/data"
+import {
+  getCategoryColor,
+  resolveCanonicalCategoryName,
+} from "@/constants/categories"
 import { calculateAccountFinancials } from "@/lib/account-financials"
 import { TransactionItem } from "@/components/transaction-item"
 import { AddTransactionModal, type AddTransactionData } from "@/components/add-transaction-modal"
@@ -77,14 +80,15 @@ export function AccountDetailScreen({
   const categoryData = accountTransactions
     .filter((t) => t.type === "expense")
     .reduce<Record<string, number>>((acc, t) => {
-      acc[t.category] = (acc[t.category] ?? 0) + t.amount
+      const label = resolveCanonicalCategoryName(t.category, "expense")
+      acc[label] = (acc[label] ?? 0) + Math.abs(t.amount)
       return acc
     }, {})
 
   const pieData = Object.entries(categoryData).map(([name, value]) => ({
     name,
     value,
-    color: categoryColors[name] ?? "#B8A08A",
+    color: getCategoryColor(name, "expense"),
   }))
 
   return (
@@ -196,7 +200,10 @@ export function AccountDetailScreen({
                     className="size-2 rounded-full"
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span
+                    className="max-w-[min(140px,100%)] truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+                    title={entry.name}
+                  >
                     {entry.name}
                   </span>
                 </div>

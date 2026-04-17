@@ -36,7 +36,7 @@ export const transactions: Transaction[] = [
   {
     id: "1",
     accountId: "1",
-    category: "Food",
+    category: "Food & Dining",
     description: "Grocery Store",
     amount: 85.5,
     date: "2026-02-23",
@@ -72,7 +72,7 @@ export const transactions: Transaction[] = [
   {
     id: "5",
     accountId: "2",
-    category: "Income",
+    category: "Salary",
     description: "Monthly Savings",
     amount: 500,
     date: "2026-02-20",
@@ -81,7 +81,7 @@ export const transactions: Transaction[] = [
   {
     id: "6",
     accountId: "1",
-    category: "Food",
+    category: "Food & Dining",
     description: "Coffee Shop",
     amount: 6.5,
     date: "2026-02-19",
@@ -90,7 +90,7 @@ export const transactions: Transaction[] = [
   {
     id: "7",
     accountId: "3",
-    category: "Income",
+    category: "Salary",
     description: "Emergency Transfer",
     amount: 1000,
     date: "2026-02-18",
@@ -99,22 +99,13 @@ export const transactions: Transaction[] = [
   {
     id: "8",
     accountId: "1",
-    category: "Bills",
+    category: "Bills & Utilities",
     description: "Electric Bill",
     amount: 120.0,
     date: "2026-02-17",
     type: "expense",
   },
 ]
-
-export const categoryColors: Record<string, string> = {
-  Food: "#F2826A",
-  Transport: "#DABB8F",
-  Entertainment: "#E0B44A",
-  Shopping: "#6BB3C4",
-  Bills: "#E05252",
-  Income: "#7EC9A0",
-}
 
 export const weeklySpending = [
   { day: "Mon", amount: 45 },

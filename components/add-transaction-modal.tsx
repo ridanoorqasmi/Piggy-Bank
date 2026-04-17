@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react"
 import { addTransactionSchema } from "@/lib/validations"
 import {
+  firstZodIssueMessage,
+  parsePositiveTransactionAmount,
+  sanitizeTransactionAmountInput,
+} from "@/lib/transaction-amount-input"
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -11,13 +16,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CategoryPicker } from "@/components/category-picker"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+} from "@/constants/categories"
 
 export type AddTransactionData = {
   amount: number
@@ -33,8 +36,6 @@ interface AddTransactionModalProps {
   onOpenChange: (open: boolean) => void
   onSave: (accountId: string, data: AddTransactionData) => Promise<void>
 }
-
-const categories = ["Food", "Transport", "Entertainment", "Shopping", "Bills", "Income"]
 
 const today = new Date().toISOString().split("T")[0]
 
@@ -63,19 +64,31 @@ export function AddTransactionModal({
     }
   }, [open])
 
+  useEffect(() => {
+    if (type === "expense" && category && !EXPENSE_CATEGORIES.some((c) => c.name === category)) {
+      setCategory("")
+    }
+    if (type === "income" && category && !INCOME_CATEGORIES.some((c) => c.name === category)) {
+      setCategory("")
+    }
+  }, [type, category])
+
   async function handleSubmit() {
     setError(null)
-    const numAmount = parseFloat(amount)
+    const parsedAmount = parsePositiveTransactionAmount(amount)
+    if (!parsedAmount.ok) {
+      setError(parsedAmount.message)
+      return
+    }
     const result = addTransactionSchema.safeParse({
-      amount: Number.isFinite(numAmount) ? numAmount : 0,
+      amount: parsedAmount.value,
       type,
       category: category.trim(),
       description: description.trim() || "—",
       date: date || today,
     })
     if (!result.success) {
-      const first = result.error.flatten().formErrors[0] ?? result.error.message
-      setError(first)
+      setError(firstZodIssueMessage(result.error))
       return
     }
     setSubmitting(true)
@@ -142,32 +155,33 @@ export function AddTransactionModal({
             </Label>
             <Input
               id="amount"
-              type="number"
-              step="0.01"
-              min="0"
+              data-testid="transaction-amount-input"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               placeholder="0.00"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) =>
+                setAmount(sanitizeTransactionAmountInput(e.target.value))
+              }
               className="h-12 rounded-xl border-border bg-muted font-serif text-xl text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="category" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Label
+              id="add-category-label"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            >
               Category
             </Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-12 w-full rounded-xl border-border bg-muted text-foreground">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl bg-card text-foreground">
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryPicker
+              id="add-category-picker"
+              aria-labelledby="add-category-label"
+              variant={type === "expense" ? "expense" : "income"}
+              value={category}
+              onChange={setCategory}
+            />
           </div>
 
           <div className="flex flex-col gap-2">

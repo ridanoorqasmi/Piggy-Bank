@@ -57,7 +57,7 @@ describe("useTransactions — updateTransaction / deleteTransaction (Firestore b
       {
         amount: 300,
         type: "income",
-        category: "food",
+        category: "Salary",
         description: "Test",
         date: "2024-01-01",
       }
@@ -74,7 +74,7 @@ describe("useTransactions — updateTransaction / deleteTransaction (Firestore b
     const txPayload = mockBatchUpdate.mock.calls[1][1] as Record<string, unknown>
     expect(txPayload.amount).toBe(300)
     expect(txPayload.type).toBe("income")
-    expect(txPayload.category).toBe("Food")
+    expect(txPayload.category).toBe("Salary")
     expect(mockBatchCommit).toHaveBeenCalledTimes(1)
   })
 

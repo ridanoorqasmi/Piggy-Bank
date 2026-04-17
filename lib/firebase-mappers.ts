@@ -1,5 +1,6 @@
 import type { Account, Transaction } from "./types"
 import type { DocumentData } from "firebase/firestore"
+import { resolveCanonicalCategoryName } from "@/constants/categories"
 
 /** Firestore document: users/{uid} */
 export interface FirestoreUserDoc {
@@ -59,20 +60,23 @@ export function mapFirestoreTransactionDoc(
   data: DocumentData | FirestoreTransactionDoc
 ): Transaction {
   const d = data as FirestoreTransactionDoc
+  const raw = Number(d.amount)
+  const amount = Number.isFinite(raw) ? Math.abs(raw) : 0
   return {
     id,
     accountId: d.accountId,
-    category: normalizeCategory(d.category),
+    category: normalizeCategory(d.category, d.type),
     description: d.description,
-    amount: d.amount,
+    amount,
     date: d.date,
     type: d.type,
   }
 }
 
-/** Normalize category to title case for chart colors (e.g. "food" -> "Food") */
-export function normalizeCategory(category: string): string {
-  if (!category) return "Other"
-  const lower = category.toLowerCase()
-  return lower.charAt(0).toUpperCase() + lower.slice(1)
+/** Map to canonical label from constants (legacy aliases → single display name). */
+export function normalizeCategory(
+  category: string,
+  type?: Transaction["type"]
+): string {
+  return resolveCanonicalCategoryName(category, type)
 }

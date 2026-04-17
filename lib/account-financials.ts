@@ -27,8 +27,9 @@ export function calculateAccountFinancials(
   let totalExpense = 0
   for (const t of allTransactions) {
     if (t.accountId !== account.id) continue
-    if (t.type === "expense") totalExpense += t.amount
-    else if (t.type === "income") totalIncome += t.amount
+    const mag = Math.abs(t.amount)
+    if (t.type === "expense") totalExpense += mag
+    else if (t.type === "income") totalIncome += mag
   }
   const openingBalance = account.originalAmount
   return {

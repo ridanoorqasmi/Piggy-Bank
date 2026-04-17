@@ -14,6 +14,7 @@ export interface Transaction {
   accountId: string
   category: string
   description: string
+  /** Magnitude (always ≥ 0). Sign for display is implied by `type`. */
   amount: number
   date: string
   type: "expense" | "income"

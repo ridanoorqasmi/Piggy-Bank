@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import { editTransactionSchema } from "@/lib/validations"
+import {
+  firstZodIssueMessage,
+  parsePositiveTransactionAmount,
+  sanitizeTransactionAmountInput,
+} from "@/lib/transaction-amount-input"
 import type { Transaction } from "@/lib/types"
 import {
   Sheet,
@@ -12,21 +17,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import type { AddTransactionData } from "@/components/add-transaction-modal"
+import { CategoryPicker } from "@/components/category-picker"
 import { toast } from "@/hooks/use-toast"
-
-const categories = ["Food", "Transport", "Entertainment", "Shopping", "Bills", "Income"]
-
-function firstZodMessage(issues: { path: (string | number)[]; message: string }[]): string {
-  return issues[0]?.message ?? "Invalid input"
-}
+import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  resolveCanonicalCategoryName,
+} from "@/constants/categories"
 
 interface EditTransactionModalProps {
   transaction: Transaction | null
@@ -57,8 +55,10 @@ export function EditTransactionModal({
   useEffect(() => {
     if (open && transaction) {
       setType(transaction.type)
-      setAmount(String(transaction.amount))
-      setCategory(transaction.category)
+      setAmount(String(Math.abs(transaction.amount)))
+      setCategory(
+        resolveCanonicalCategoryName(transaction.category, transaction.type)
+      )
       setTitle(transaction.description === "—" ? "" : transaction.description)
       setDate(transaction.date)
       setError(null)
@@ -66,21 +66,34 @@ export function EditTransactionModal({
     }
   }, [open, transaction])
 
+  useEffect(() => {
+    if (type === "expense" && category && !EXPENSE_CATEGORIES.some((c) => c.name === category)) {
+      setCategory("")
+    }
+    if (type === "income" && category && !INCOME_CATEGORIES.some((c) => c.name === category)) {
+      setCategory("")
+    }
+  }, [type, category])
+
   async function handleSubmit() {
     if (!transaction || submitLockRef.current) return
     submitLockRef.current = true
     try {
       setError(null)
-      const numAmount = parseFloat(amount)
+      const parsedAmount = parsePositiveTransactionAmount(amount)
+      if (!parsedAmount.ok) {
+        setError(parsedAmount.message)
+        return
+      }
       const result = editTransactionSchema.safeParse({
-        amount: Number.isFinite(numAmount) ? numAmount : 0,
+        amount: parsedAmount.value,
         type,
         category: category.trim(),
         description: title.trim(),
         date: date || transaction.date,
       })
       if (!result.success) {
-        setError(firstZodMessage(result.error.issues))
+        setError(firstZodIssueMessage(result.error))
         return
       }
       const data: AddTransactionData = {
@@ -170,35 +183,32 @@ export function EditTransactionModal({
             <Input
               id="edit-amount"
               data-testid="transaction-amount-input"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               placeholder="0.00"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) =>
+                setAmount(sanitizeTransactionAmountInput(e.target.value))
+              }
               className="h-12 rounded-xl border-border bg-muted font-serif text-xl text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="edit-category" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Label
+              id="edit-category-label"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            >
               Category
             </Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger
-                id="edit-category"
-                className="h-12 w-full rounded-xl border-border bg-muted text-foreground"
-              >
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl bg-card text-foreground">
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryPicker
+              id="edit-category-picker"
+              aria-labelledby="edit-category-label"
+              variant={type === "expense" ? "expense" : "income"}
+              value={category}
+              onChange={setCategory}
+            />
           </div>
 
           <div className="flex flex-col gap-2">

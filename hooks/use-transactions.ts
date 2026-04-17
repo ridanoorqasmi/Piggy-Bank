@@ -69,13 +69,14 @@ export function useTransactions(uid: string | undefined) {
     }
   ): Promise<void> {
     if (!uid || !db) throw new Error("Firebase is not configured")
+    const amount = Math.abs(data.amount)
     const txCol = collection(db, "users", uid, "transactions")
-    const category = normalizeCategory(data.category)
+    const category = normalizeCategory(data.category, data.type)
     const batch = writeBatch(db)
     const newTxRef = doc(txCol)
     batch.set(newTxRef, {
       accountId,
-      amount: data.amount,
+      amount,
       type: data.type,
       category,
       description: data.description || "—",
@@ -85,11 +86,11 @@ export function useTransactions(uid: string | undefined) {
     const accountRef = doc(db, "users", uid, "accounts", accountId)
     if (data.type === "expense") {
       batch.update(accountRef, {
-        balance: increment(-data.amount),
-        totalSpend: increment(data.amount),
+        balance: increment(-amount),
+        totalSpend: increment(amount),
       })
     } else {
-      batch.update(accountRef, { balance: increment(data.amount) })
+      batch.update(accountRef, { balance: increment(amount) })
     }
     batch.commit() // fire-and-forget: local cache updates immediately, onSnapshot fires right away
   }
@@ -111,23 +112,25 @@ export function useTransactions(uid: string | undefined) {
     data: TransactionUpsertPayload
   ): Promise<void> {
     if (!uid || !db) throw new Error("Firebase is not configured")
+    const prevAmount = Math.abs(previous.amount)
+    const nextAmount = Math.abs(data.amount)
     const balanceDelta =
-      (previous.type === "expense" ? previous.amount : -previous.amount) +
-      (data.type === "expense" ? -data.amount : data.amount)
+      (previous.type === "expense" ? prevAmount : -prevAmount) +
+      (data.type === "expense" ? -nextAmount : nextAmount)
     const totalSpendDelta =
-      (previous.type === "expense" ? -previous.amount : 0) +
-      (data.type === "expense" ? data.amount : 0)
+      (previous.type === "expense" ? -prevAmount : 0) +
+      (data.type === "expense" ? nextAmount : 0)
 
     const batch = writeBatch(db)
     const txRef = doc(db, "users", uid, "transactions", transactionId)
     const accountRef = doc(db, "users", uid, "accounts", previous.accountId)
-    const category = normalizeCategory(data.category)
+    const category = normalizeCategory(data.category, data.type)
     batch.update(accountRef, {
       balance: increment(balanceDelta),
       totalSpend: increment(totalSpendDelta),
     })
     batch.update(txRef, {
-      amount: data.amount,
+      amount: nextAmount,
       type: data.type,
       category,
       description: data.description || "—",
@@ -141,13 +144,14 @@ export function useTransactions(uid: string | undefined) {
     const batch = writeBatch(db)
     const txRef = doc(db, "users", uid, "transactions", transaction.id)
     const accountRef = doc(db, "users", uid, "accounts", transaction.accountId)
+    const amt = Math.abs(transaction.amount)
     if (transaction.type === "expense") {
       batch.update(accountRef, {
-        balance: increment(transaction.amount),
-        totalSpend: increment(-transaction.amount),
+        balance: increment(amt),
+        totalSpend: increment(-amt),
       })
     } else {
-      batch.update(accountRef, { balance: increment(-transaction.amount) })
+      batch.update(accountRef, { balance: increment(-amt) })
     }
     batch.delete(txRef)
     await batch.commit()

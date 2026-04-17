@@ -1,7 +1,10 @@
 "use client"
 
 import type { Transaction } from "@/lib/types"
-import { categoryColors } from "@/lib/data"
+import {
+  getCategoryColor,
+  resolveCanonicalCategoryName,
+} from "@/constants/categories"
 import { useCurrency } from "@/contexts/currency-context"
 import { MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -20,7 +23,11 @@ interface TransactionItemProps {
 
 export function TransactionItem({ transaction, onEdit, onDelete }: TransactionItemProps) {
   const { formatWithSymbol } = useCurrency()
-  const color = categoryColors[transaction.category] ?? "#B8A08A"
+  const categoryLabel = resolveCanonicalCategoryName(
+    transaction.category,
+    transaction.type
+  )
+  const color = getCategoryColor(transaction.category, transaction.type)
   const isExpense = transaction.type === "expense"
   const showMenu = Boolean(onEdit || onDelete)
 
@@ -47,7 +54,7 @@ export function TransactionItem({ transaction, onEdit, onDelete }: TransactionIt
             data-testid="transaction-category"
             className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
           >
-            {transaction.category}
+            {categoryLabel}
           </p>
         </div>
       </div>
@@ -98,7 +105,7 @@ export function TransactionItem({ transaction, onEdit, onDelete }: TransactionIt
             }`}
           >
             {isExpense ? "-" : "+"}
-            {formatWithSymbol(transaction.amount)}
+            {formatWithSymbol(Math.abs(transaction.amount))}
           </p>
           <p className="text-[10px] text-muted-foreground">
             {new Date(transaction.date).toLocaleDateString("en-US", {

@@ -48,7 +48,6 @@ async function addTransaction(
     await page.getByRole("button", { name: /^expense$/i }).click()
   }
   await page.locator("#amount").fill(opts.amount)
-  await page.getByRole("combobox").click()
   await page.getByRole("option", { name: opts.category }).click()
   await page.getByPlaceholder(/what was this for/i).fill(opts.title)
   await page.getByRole("button", { name: /save transaction/i }).click()
@@ -87,7 +86,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "50",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B11 lunch",
       })
       await openEditForTitle(page, "B11 lunch")
@@ -97,20 +96,30 @@ test.describe("B — Transaction edit/delete UI", () => {
       await expect(page.getByRole("heading", { name: /edit transaction/i })).toBeVisible()
     })
 
-    test("B1.2 negative amount — validation blocks save", async ({ page }) => {
+    test("B1.2 negative input — minus stripped; amount stays positive", async ({
+      page,
+    }) => {
       const name = "E2E-B12-neg"
       await createAccount(page, name, "100")
       await openAccount(page, name)
       await addTransaction(page, {
         amount: "10",
         income: false,
-        category: "Bills",
+        category: "Bills & Utilities",
         title: "B12 bill",
       })
       await openEditForTitle(page, "B12 bill")
       await page.getByTestId("transaction-amount-input").fill("-100")
+      await expect(page.getByTestId("transaction-amount-input")).toHaveValue("100")
       await page.getByTestId("transaction-save-button").click()
-      await expect(page.getByTestId("validation-error")).toBeVisible()
+      await expect(page.getByRole("heading", { name: /edit transaction/i })).not.toBeVisible({
+        timeout: 15000,
+      })
+      const amt = page
+        .getByTestId("transaction-item")
+        .filter({ hasText: "B12 bill" })
+        .getByTestId("transaction-amount")
+      await expect(amt).toContainText("100")
     })
 
     test("B1.3 very large number saves and shows in list", async ({ page }) => {
@@ -120,7 +129,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "1",
         income: true,
-        category: "Income",
+        category: "Salary",
         title: "B13 seed",
       })
       await openEditForTitle(page, "B13 seed")
@@ -158,7 +167,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "10",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B15 food",
       })
       await openEditForTitle(page, "B15 food")
@@ -176,7 +185,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "300",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B21 exp",
       })
       expect(await parseBalance(page)).toBe(700)
@@ -199,7 +208,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "200",
         income: true,
-        category: "Income",
+        category: "Salary",
         title: "B22 inc",
       })
       expect(await parseBalance(page)).toBe(200)
@@ -241,7 +250,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "40",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B24 meal",
       })
       await openEditForTitle(page, "B24 meal")
@@ -265,7 +274,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "100",
         income: true,
-        category: "Income",
+        category: "Salary",
         title: "B31 only",
       })
       expect(await parseBalance(page)).toBe(100)
@@ -283,7 +292,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "1000",
         income: false,
-        category: "Bills",
+        category: "Bills & Utilities",
         title: "B32 big",
       })
       expect(await parseBalance(page)).toBe(1000)
@@ -301,7 +310,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "500",
         income: true,
-        category: "Income",
+        category: "Salary",
         title: "B33 pay",
       })
       expect(await parseBalance(page)).toBe(500)
@@ -319,7 +328,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "10",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B34 x",
       })
       await page.getByTestId("transaction-item").getByTestId("transaction-options-trigger").click()
@@ -337,7 +346,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "20",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B35 keep",
       })
       const before = await parseBalance(page)
@@ -357,7 +366,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "100",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B41 a",
       })
       await addTransaction(page, {
@@ -390,7 +399,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "25",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B42 t",
       })
       await openEditForTitle(page, "B42 t")
@@ -422,7 +431,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "5",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B52 t",
       })
       await openEditForTitle(page, "B52 t")
@@ -438,7 +447,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "5",
         income: true,
-        category: "Income",
+        category: "Salary",
         title: "B53 t",
       })
       await openEditForTitle(page, "B53 t")
@@ -464,7 +473,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "1",
         income: false,
-        category: "Bills",
+        category: "Bills & Utilities",
         title: longTitle,
       })
       await expect(page.getByTestId("transaction-title")).toContainText("E2E-LONG-")
@@ -479,7 +488,7 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "7",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B62 reopen",
       })
       await openEditForTitle(page, "B62 reopen")
@@ -495,13 +504,13 @@ test.describe("B — Transaction edit/delete UI", () => {
       await addTransaction(page, {
         amount: "15",
         income: false,
-        category: "Food",
+        category: "Food & Dining",
         title: "B63 e",
       })
       await addTransaction(page, {
         amount: "40",
         income: true,
-        category: "Income",
+        category: "Salary",
         title: "B63 i",
       })
       await expect(
@@ -525,7 +534,7 @@ test.describe("B — Transaction edit/delete UI", () => {
         await addTransaction(page, {
           amount: "1",
           income: false,
-          category: "Food",
+          category: "Food & Dining",
           title: `B71-row-${i}`,
         })
       }
