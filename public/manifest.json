@@ -4,8 +4,8 @@
   "description": "Personal finance tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f172a",
+  "background_color": "#0B0F1A",
+  "theme_color": "#0B0F1A",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -19,4 +19,3 @@
     }
   ]
 }
-

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Nunito, DM_Serif_Display, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { PwaRegister } from '@/components/pwa-register'
+import { InstallPrompt } from '@/components/install-prompt'
 import { Toaster } from '@/components/ui/toaster'
 import { ActivityTracker } from '@/components/activity-tracker'
 import { CurrencyProvider } from '@/contexts/currency-context'
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   title: 'Piggy Bank - Personal Finance',
   description: 'A cute, premium personal finance app to manage your spending and savings.',
   manifest: '/manifest.json',
-  themeColor: '#0f172a',
+  themeColor: '#0B0F1A',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#0B0F1A',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -43,6 +44,7 @@ export default function RootLayout({
         <Toaster />
         <ActivityTracker />
         <PwaRegister />
+        <InstallPrompt />
         <Analytics />
       </body>
     </html>
